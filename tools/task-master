@@ -10,9 +10,23 @@ use base qw( MT::Tool );
 
 use MT::Task;
 use MT::Session;
+use MT::TaskMgr;
 
 sub options {
     return ();
+}
+
+sub cmd_run {
+    my $class = shift;
+    my @args  = @_;
+
+    unless (@args) {
+        print "Task keys required for run command\n";
+        return;
+    }
+
+    MT::TaskMgr->run_tasks(@args);
+    $class->cmd_status(@args);
 }
 
 sub cmd_status {
@@ -64,9 +78,9 @@ sub main {
         print "Need a known command!\n";
         return;
     }
-    
+
     my $cmd_method = "cmd_$cmd";
-    $class->$cmd_method (@ARGV);
+    $class->$cmd_method(@ARGV);
 }
 
 __PACKAGE__->main() unless caller;
