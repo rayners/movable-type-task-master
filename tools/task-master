@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+
+package MT::TaskMaster;
+
+use strict;
+use warnings;
+
+use lib qw( lib extlib );
+use base qw( MT::Tool );
+
+use MT::Task;
+use MT::Session;
+
+sub options {
+    return ();
+}
+
+sub cmd_status {
+    my $class = shift;
+    my @args  = @_;
+
+    require MT::Session;
+    my @sessions = MT::Session->load( { kind => 'PT' } );
+
+    if (@args) {
+        my %task_keys = map { my $k = "Task:$_"; $k => 1 } @args;
+        @sessions = grep { exists $task_keys{ $_->id } } @sessions;
+    }
+
+    if (@sessions) {
+        my $tasks = MT->registry('tasks');
+      SESSION:
+        for my $session (@sessions) {
+            my $id = $session->id;
+            $id =~ s/^Task://;
+            unless ( exists $tasks->{$id} ) {
+                print "Unknown task key: $id\n";
+                next SESSION;
+            }
+            my $task = $tasks->{$id};
+            if ( ref $task eq 'HASH' ) {
+                $task->{key} ||= $id;
+                $task = MT::Task->new($task);
+            }
+
+            my $name          = $task->label();
+            my $last_finished = localtime( $session->start );
+
+            print "$name last finished at: $last_finished\n";
+        }
+    }
+    else {
+        print "No task data found.\n";
+    }
+}
+
+sub main {
+    my $class = shift;
+    my ($verbose) = $class->SUPER::main(@_);
+
+    my $cmd = shift @ARGV;
+
+    unless ( $cmd && $class->can("cmd_$cmd") ) {
+        print "Need a known command!\n";
+        return;
+    }
+    
+    my $cmd_method = "cmd_$cmd";
+    $class->$cmd_method (@ARGV);
+}
+
+__PACKAGE__->main() unless caller;
+
+1;
