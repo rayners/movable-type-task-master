@@ -16,6 +16,42 @@ sub options {
     return ();
 }
 
+sub freq_to_str {
+    my $freq = shift;
+    my ( $d, $h, $m, $s ) = ( 0, 0, 0, 0 );
+
+    $d++, $freq -= ( 60 * 60 * 24 ) while ( $freq >= ( 60 * 60 * 24 ) );
+    $h++, $freq -= ( 60 * 60 ) while ( $freq >= ( 60 * 60 ) );
+    $m++, $freq -= 60 while ( $freq >= 60 );
+    $s = $freq;
+
+    my $str = '';
+    $str .= "${d}d" if $d;
+    $str .= "${h}h" if $h;
+    $str .= "${m}m" if $m;
+    $str .= "${s}s" if $s;
+
+    $str;
+}
+
+sub cmd_list {
+    my $class = shift;
+    my @args  = @_;
+
+    my $tasks = MT->registry('tasks');
+    for my $t ( sort keys %$tasks ) {
+        print "$t:\n";
+        my $task = $tasks->{$t};
+        if ( ref $task eq 'HASH' ) {
+            $task->{key} ||= $t;
+            $task = MT::Task->new($task);
+        }
+        print "\tLabel: " . $task->label . "\n";
+        print "\tFrequency: " . freq_to_str( $task->frequency ) . "\n";
+        print "\tComponent: " . $task->{plugin}->name . "\n";
+    }
+}
+
 sub cmd_forcerun {
     my $class = shift;
     my @args  = @_;
