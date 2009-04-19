@@ -16,6 +16,21 @@ sub options {
     return ();
 }
 
+sub cmd_forcerun {
+    my $class = shift;
+    my @args  = @_;
+
+    unless (@args) {
+        print "Task keys required for forcerun command\n";
+        return;
+    }
+
+    require MT::Session;
+    MT::Session->remove( { kind => 'PT', id => [ map { "Task:$_" } @args ] } );
+
+    $class->cmd_run(@args);
+}
+
 sub cmd_run {
     my $class = shift;
     my @args  = @_;
